@@ -1,47 +1,49 @@
+use std::io::{self, Write}; // For user input
 
-fn is_even(n: i32) -> bool {
-    n % 2 == 0
+// Function to check the guess
+fn check_guess(guess: i32, secret: i32) -> i32 {
+    if guess == secret {
+        0 // Correct guess
+    } else if guess > secret {
+        1 // Guess is too high
+    } else {
+        -1 // Guess is too low
+    }
 }
 
 fn main() {
-    // Create an array of 10 integer numbers
-    let numbers = [3, 5, 7, 10, 15, 18, 22, 30, 35, 40];
+    // The secret number (hardcoded)
+    let secret_number = 42;
 
-    // Use a for loop to iterate through the array
-    for &num in numbers.iter() {
-        // Check if the number is divisible by both 3 and 5
-        if num % 3 == 0 && num % 5 == 0 {
-            println!("FizzBuzz");
-        } else if num % 3 == 0 {
-            // Check if the number is divisible by 3
-            println!("Fizz");
-        } else if num % 5 == 0 {
-            // Check if the number is divisible by 5
-            println!("Buzz");
-        } else if is_even(num) {
-            // Check if the number is even
-            println!("{} is even", num);
+    // Track the number of guesses
+    let mut guess_count = 0;
+
+    // Game loop
+    loop {
+        // Ask for user input (simulating dynamic guesses)
+        print!("Enter your guess: ");
+        io::stdout().flush().unwrap(); // Ensures the prompt is displayed
+
+        let mut guess = String::new();
+        io::stdin().read_line(&mut guess).expect("Failed to read line");
+        let guess: i32 = guess.trim().parse().expect("Please enter a valid number");
+
+        guess_count += 1;
+
+        // Check the guess
+        let result = check_guess(guess, secret_number);
+
+        // Print feedback based on the result
+        if result == 0 {
+            println!("Correct! The secret number is {}.", secret_number);
+            break; // Exit the loop
+        } else if result == 1 {
+            println!("Your guess of {} is too high.", guess);
         } else {
-            // If none of the above, it is odd
-            println!("{} is odd", num);
+            println!("Your guess of {} is too low.", guess);
         }
     }
 
-    // Use a while loop to find and print the sum of all numbers in the array
-    let mut sum = 0;
-    let mut i = 0;
-    while i < numbers.len() {
-        sum += numbers[i];
-        i += 1;
-    }
-    println!("Sum of all numbers: {}", sum);
-
-    // Use a loop to find and print the largest number in the array
-    let mut largest = numbers[0];
-    for &num in numbers.iter() {
-        if num > largest {
-            largest = num;
-        }
-    }
-    println!("Largest number: {}", largest);
+    // Print the number of guesses it took
+    println!("You guessed the number in {} tries.", guess_count);
 }
