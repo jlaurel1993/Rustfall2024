@@ -1,56 +1,59 @@
-use std::fs::{File, OpenOptions};
-use std::io::{self, BufRead, Write, BufReader};
+use std::fs::File;
+use std::io::{Write, BufReader, BufRead, Error};
 
-struct Car {
-    make: String,
-    model: String,
-    year: u32,
+struct Book {
+    title: String,
+    author: String,
+    year: u16,
+}
+
+fn save_books(books: &Vec<Book>, filename: &str) -> Result<(), Error> {
+    let mut file = File::create(filename)?;
+    for book in books {
+        writeln!(file, "{},{},{}", book.title, book.author, book.year)?;
+    }
+    Ok(())
+}
+
+fn load_books(filename: &str) -> Result<Vec<Book>, Error> {
+    let file = File::open(filename)?;
+    let reader = BufReader::new(file);
+    let mut books = Vec::new();
+
+    for line in reader.lines() {
+        let line = line?;
+        let parts: Vec<&str> = line.split(',').collect();
+        if parts.len() == 3 {
+            let book = Book {
+                title: parts[0].to_string(),
+                author: parts[1].to_string(),
+                year: parts[2].parse().unwrap_or(0),
+            };
+            books.push(book);
+        }
+    }
+    Ok(books)
 }
 
 fn main() {
-    let mut buffer = String::new();
+    let books = vec![
+        Book { title: "1984".to_string(), author: "George Orwell".to_string(), year: 1949 },
+        Book { title: "To Kill a Mockingbird".to_string(), author: "Harper Lee".to_string(), year: 1960 },
+    ];
 
-    // Getting car make
-    print!("Enter the car make: ");
-    io::stdout().flush().unwrap();
-    io::stdin().read_line(&mut buffer).unwrap();
-    let make = buffer.trim().to_string();
-    buffer.clear();
+    match save_books(&books, "books.txt") {
+        Ok(_) => println!("Books saved to file."),
+        Err(e) => println!("Error saving books: {}", e),
+    }
 
-    // Getting car model
-    print!("Enter the car model: ");
-    io::stdout().flush().unwrap();
-    io::stdin().read_line(&mut buffer).unwrap();
-    let model = buffer.trim().to_string();
-    buffer.clear();
-
-    // Getting car year
-    print!("Enter the car year: ");
-    io::stdout().flush().unwrap();
-    io::stdin().read_line(&mut buffer).unwrap();
-    let year: u32 = buffer.trim().parse().expect("Please enter a valid year");
-    
-    // Creating the car struct
-    let car = Car { make, model, year };
-
-    // Saving car info to user_info.txt
-    let mut file = OpenOptions::new()
-        .append(true)
-        .create(true)
-        .open("user_info.txt")
-        .unwrap();
-
-    writeln!(file, "Car Make: {}", car.make).unwrap();
-    writeln!(file, "Car Model: {}", car.model).unwrap();
-    writeln!(file, "Car Year: {}", car.year).unwrap();
-    writeln!(file, "--------------------------").unwrap();
-
-    // Reading from user_info.txt and printing to screen
-    let file = File::open("user_info.txt").unwrap();
-    let reader = BufReader::new(file);
-
-    println!("\nContents of user_info.txt:");
-    for line in reader.lines() {
-        println!("{}", line.unwrap());
+    match load_books("books.txt") {
+        Ok(loaded_books) => {
+            println!("Loaded books:");
+            for book in loaded_books {
+                println!("{} by {}, published in {}", book.title, book.author, book.year);
+            }
+        }
+        Err(e) => println!("Error loading books: {}", e),
     }
 }
+
