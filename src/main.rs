@@ -6,27 +6,27 @@ use serde::Deserialize;
 use serde_json::from_str;
 use ureq;
 
-// Define structs for JSON deserialization only.
+
 #[derive(Deserialize)]
-#[allow(dead_code)] // Suppress unused field warning
+#[allow(dead_code)] 
 struct CurrencyPrice {
     usd: f64,
 }
 
 #[derive(Deserialize)]
-#[allow(dead_code)] // Suppress unused field warning
+#[allow(dead_code)] 
 struct GlobalQuote {
     #[serde(rename = "05. price")]
-    price: String, // Parse as f64 when needed
+    price: String, 
 }
 
-// Define the Pricing trait with methods to fetch the price and save it to a file.
+
 trait Pricing {
     fn fetch_price(&self) -> Result<f64, Box<dyn std::error::Error>>;
     fn save_to_file(&self, price: f64) -> std::io::Result<()>;
 }
 
-// Backoff mechanism for fetching prices with rate limit handling
+
 fn fetch_price_with_backoff(url: &str) -> Result<f64, Box<dyn std::error::Error>> {
     let mut attempts = 0;
     let max_attempts = 5;
@@ -59,7 +59,7 @@ fn fetch_price_with_backoff(url: &str) -> Result<f64, Box<dyn std::error::Error>
     }
 }
 
-// Implement the Pricing trait for Bitcoin
+
 struct Bitcoin;
 
 impl Pricing for Bitcoin {
@@ -73,7 +73,7 @@ impl Pricing for Bitcoin {
     }
 }
 
-// Implement the Pricing trait for Ethereum
+
 struct Ethereum;
 
 impl Pricing for Ethereum {
@@ -87,7 +87,7 @@ impl Pricing for Ethereum {
     }
 }
 
-// Implement the Pricing trait for SP500 with backoff for rate limiting
+
 struct SP500;
 
 impl Pricing for SP500 {
@@ -131,14 +131,14 @@ impl Pricing for SP500 {
 }
 
 fn main() {
-    // Create instances of each asset and store them in a vector as trait objects.
+    
     let assets: Vec<Box<dyn Pricing>> = vec![
         Box::new(Bitcoin),
         Box::new(Ethereum),
         Box::new(SP500),
     ];
 
-    // Infinite loop to periodically fetch and save pricing data every 10 seconds.
+    
     loop {
         for asset in &assets {
             match asset.fetch_price() {
