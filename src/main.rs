@@ -1,34 +1,35 @@
-use std::sync::{Arc, Mutex};
-use std::thread;
+mod config;
+mod worker_pool;
+mod website_checker;
+
+use config::Config;
+use website_checker::check_website;
+use worker_pool::WorkerPool;
 
 fn main() {
-    const NUM_THREADS: usize = 5;
-    const INCREMENTS_PER_THREAD: usize = 10;
+    // Initialize configuration
+    let config = Config::new();
 
-    // Shared counter
-    let counter = Arc::new(Mutex::new(0));
-    let mut handles = vec![];
+    // List of URLs to monitor
+    let urls = vec![
+        "https://www.google.com",
+        "https://www.github.com",
+        "https://www.nonexistentwebsite.xyz",
+    ];
 
-    // Spawn threads
-    for i in 1..=NUM_THREADS {
-        let counter = Arc::clone(&counter);
-        let handle = thread::spawn(move || {
-            println!("Thread {} started", i);
-            for _ in 0..INCREMENTS_PER_THREAD {
-                let mut num = counter.lock().unwrap();
-                *num += 1;
-            }
-            println!("Thread {} completed", i);
-        });
-        handles.push(handle);
+    // Create a worker pool
+    let (pool, _receiver) = WorkerPool::new(config.num_threads, move |url: String| {
+        let status = check_website(&url, &config);
+        println!("{:?}", status); // Print the website status
+    });
+
+    // Send URLs to the worker pool
+    for url in urls {
+        pool.sender()
+            .send(url.to_string())
+            .expect("Failed to send URL to worker pool");
     }
 
-    // Wait for all threads to complete
-    for handle in handles {
-        handle.join().unwrap();
-    }
-
-    // Print final counter value
-    println!("All threads completed");
-    println!("Final counter value: {}", *counter.lock().unwrap());
+    // Drop the pool to ensure all threads are joined before program exits
+    drop(pool);
 }
